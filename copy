@@ -1,0 +1,116 @@
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+
+const SOLUTION = `#include <bits/stdc++.h>
+using namespace std;
+
+#define int long long int
+#define inf INT_MAX
+#define mod 998244353
+
+void f() {
+    int x, y;
+    cin >> x >> y;
+    cout << (y * x) / 100 << "\\n";
+}
+
+int32_t main() {
+    ios::sync_with_stdio(0); cin.tie(0);
+    int t; cin >> t;
+    while (t--) f();
+}`;
+
+(async () => {
+  const cookies = JSON.parse(fs.readFileSync('codechef_cookies.json', 'utf8'));
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+
+  await page.setCookie(...cookies);
+
+  await page.goto('https://www.codechef.com/practice/course/logical-problems/DIFF800/problems/CREDCOINS', { waitUntil: 'networkidle2' });
+
+  // Wait for the editor to load (adjust selector as needed)
+  await page.waitForSelector('.ace_text-input, .monaco-editor, textarea, [contenteditable="true"]', { timeout: 10000 });
+
+  // Scrape the current content of the editor (try common selectors)
+  const editorContent = await page.evaluate(() => {
+    // Try Monaco Editor
+    const monaco = document.querySelector('.monaco-editor');
+    if (monaco) {
+      return monaco.innerText;
+    }
+    // Try Ace Editor
+    const ace = document.querySelector('.ace_text-input');
+    if (ace && ace.closest('.ace_editor')) {
+      return ace.closest('.ace_editor').innerText;
+    }
+    // Try textarea
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      return textarea.value;
+    }
+    // Try contenteditable
+    const ce = document.querySelector('[contenteditable="true"]');
+    if (ce) {
+      return ce.innerText;
+    }
+    return null;
+  });
+
+  console.log('Current editor content:', editorContent);
+
+  // Select C++ language before writing the solution
+  // Try common selectors for language dropdowns and options
+  // Adjust selectors as needed for CodeChef UI
+  try {
+    // Wait for the language dropdown to appear
+    await page.waitForSelector('select[name="language"]', { timeout: 5000 });
+    // Set the value to C++ (commonly 'cpp', 'C++14', 'C++17', etc.)
+    await page.select('select[name="language"]', '44'); // '44' is often C++17 on CodeChef, adjust if needed
+  } catch (e) {
+    console.warn('Could not select C++ language. Please check the selector or option value.');
+  }
+
+  // Set the editor content to your solution (try common editors)
+  await page.evaluate((solution) => {
+    // Monaco Editor
+    const monaco = document.querySelector('.monaco-editor');
+    if (monaco && window.monaco) {
+      const editor = window.monaco.editor.getEditors()[0];
+      if (editor) editor.setValue(solution);
+    }
+    // Ace Editor
+    const ace = document.querySelector('.ace_text-input');
+    if (ace && ace.closest('.ace_editor') && window.ace) {
+      const editor = window.ace.edit(ace.closest('.ace_editor'));
+      editor.setValue(solution, -1);
+    }
+    // Textarea
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      textarea.value = solution;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    // Contenteditable
+    const ce = document.querySelector('[contenteditable="true"]');
+    if (ce) {
+      ce.innerText = solution;
+      ce.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, SOLUTION);
+
+  // Optional: Take a screenshot to verify
+  await page.screenshot({ path: 'editor_filled.png' });
+
+  // Click the submit button (using the provided selector)
+  const submitButtonSelector = '#submit_btn';
+  await page.waitForSelector(submitButtonSelector, { timeout: 10000 });
+  await page.click(submitButtonSelector);
+
+  // Optional: Wait for confirmation or navigation after submission
+  // await page.waitForNavigation({ waitUntil: 'networkidle2' });
+  // Or wait for a confirmation element (adjust selector as needed)
+  // await page.waitForSelector('.success-message, .alert-success', { timeout: 10000 });
+
+  // await browser.close();
+})();

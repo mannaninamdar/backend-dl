@@ -1,0 +1,14 @@
+{
+  "name": "codechef",
+  "version": "1.0.0",
+  "main": "cc_cookies.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "puppeteer": "^24.12.1"
+  }
+}
